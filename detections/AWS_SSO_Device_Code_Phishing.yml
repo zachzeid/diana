@@ -2,36 +2,27 @@
 # Detection Name: AWS SSO Device Code Phishing
 
 description: |
-  The threat described in the summarized intelligence is a phishing attack that targets AWS SSO (Single Sign-On) users by exploiting the device code authentication feature. This feature, which is part of the OpenID Connect protocol, allows users to authenticate by entering a code displayed on their device. The attack works by tricking the user into entering their credentials on a malicious website that mimics the legitimate AWS SSO login page, effectively stealing the user's credentials.
-
-This attack is particularly dangerous because it can bypass security controls like multi-factor authentication (MFA) and IP allowlisting at the identity provider (IdP) level. By stealing the user's credentials, the attacker can gain access to the user's AWS accounts and perform malicious activities.
+  The threat described in the summarized intelligence is a phishing attack that exploits the device code authentication feature in AWS Single Sign-On (AWS SSO). This feature, which is part of the OpenID Connect (OIDC) protocol, allows users to authenticate by entering a code displayed on their device. The intelligence indicates that this feature can be abused by attackers to conduct phishing attacks and bypass security controls like multi-factor authentication (MFA) and IP allow-listing.
 
 detection_rule: |
-  (in Panther):
+  (in Panther (Python)):
 
 ```python
-import re
-
 def rule(event):
     # Check if the event is an AWS CloudTrail event
-    if event.get("eventSource") != "signin.amazonaws.com":
-        return False
-
-    # Check if the event is related to the AWS SSO device code authentication flow
-    if "deviceCode" not in event.get("eventName", ""):
-        return False
-
-    # Check if the event indicates a failed login attempt
-    if event.get("errorCode") is not None:
-        return True
-
+    if event.get("eventSource") == "signin.amazonaws.com" and event.get("eventName") == "InitiateDeviceAuth":
+        # Check if the event indicates a device code authentication flow
+        if event.get("responseElements", {}).get("deviceCode"):
+            # Check if the event was initiated from an untrusted IP address or location
+            if event.get("sourceIPAddress") not in trusted_ips or event.get("userAgent") not in trusted_user_agents:
+                return True
     return False
 
 def title(event):
-    return "Potential AWS SSO Device Code Phishing Attempt"
+    return "Potential AWS SSO Device Code Phishing Attack"
 
 def description(event):
-    return "An AWS CloudTrail event was detected that indicates a potential AWS SSO device code phishing attempt. The event shows a failed login attempt, which could be an indication of an attacker trying to steal user credentials."
+    return "Detected a potential AWS SSO device code authentication phishing attempt from an untrusted IP address or user agent."
 
 def severity(event):
     return "high"
