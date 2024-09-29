@@ -1,0 +1,29 @@
+
+# Detection Name: AWS SSO Device Code Phishing
+
+description: |
+  The threat described in the summarized intelligence is a phishing attack that exploits the device code authentication feature in AWS Single Sign-On (AWS SSO). This feature, which is part of the OpenID Connect (OIDC) protocol, allows users to authenticate by entering a code displayed on their device. The intelligence indicates that this feature can be abused by attackers to conduct phishing attacks and bypass security controls like multi-factor authentication (MFA) and IP allowlisting.
+
+detection_rule: |
+  (in Panther (Python)):
+
+```python
+def rule(event):
+    # Check if the event is an AWS CloudTrail event
+    if event.get("eventSource") == "signin.amazonaws.com" and event.get("eventName") == "InitiateDeviceAuth":
+        # Check if the event indicates a device code authentication flow
+        if event.get("responseElements", {}).get("deviceCode"):
+            # Check if the event was initiated from an untrusted IP address or location
+            if event.get("sourceIPAddress") not in trusted_ips or event.get("userAgent") not in trusted_user_agents:
+                return True
+    return False
+
+def title(event):
+    return "Potential AWS SSO Device Code Phishing Attack"
+
+def description(event):
+    return "Detected a potential AWS SSO device code authentication phishing attempt from an untrusted IP address or user agent."
+
+def severity(event):
+    return "high"
+```
