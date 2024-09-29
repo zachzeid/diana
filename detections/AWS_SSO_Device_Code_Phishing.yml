@@ -2,7 +2,7 @@
 # Detection Name: AWS SSO Device Code Phishing
 
 description: |
-  The threat described in the summarized intelligence is a phishing attack that exploits the device code authentication feature in AWS Single Sign-On (AWS SSO). This feature, which is part of the OpenID Connect (OIDC) protocol, allows users to authenticate by entering a code displayed on their device. The intelligence indicates that this feature can be abused by attackers to conduct phishing attacks and bypass security controls like multi-factor authentication (MFA) and IP allow-listing.
+  The threat described in the summarized intelligence is a phishing attack that exploits the device code authentication feature in AWS Single Sign-On (AWS SSO). This feature, which is part of the OpenID Connect (OIDC) protocol, allows users to authenticate by entering a code displayed on their device. The intelligence indicates that this feature can be abused by attackers to conduct phishing attacks and bypass security controls like multi-factor authentication (MFA) and IP allowlisting.
 
 detection_rule: |
   (in Panther (Python)):
