@@ -9,20 +9,20 @@ detection_rule: |
 
 ```python
 def rule(event):
-    # Check if the event is an AWS CloudTrail event
-    if event.get("eventSource") == "signin.amazonaws.com" and event.get("eventName") == "InitiateDeviceAuth":
-        # Check if the event indicates a device code authentication flow
-        if event.get("responseElements", {}).get("deviceCode"):
-            # Check if the event was initiated from an untrusted IP address or location
-            if event.get("sourceIPAddress") not in trusted_ips or event.get("userAgent") not in trusted_user_agents:
-                return True
-    return False
+    return (
+        event.get("eventSource") == "signin.amazonaws.com"
+        and event.get("eventName") == "InitiateDeviceAuth"
+        and event.get("userAgent") not in ["aws-cli/1.", "aws-sdk-java/1.", "aws-sdk-ruby/2.", "aws-sdk-go/1.", "aws-sdk-net/1.", "aws-sdk-php/3."]
+    )
 
 def title(event):
-    return "Potential AWS SSO Device Code Phishing Attack"
+    return "AWS SSO Device Code Phishing Attempt"
 
 def description(event):
-    return "Detected a potential AWS SSO device code authentication phishing attempt from an untrusted IP address or user agent."
+    return (
+        "An AWS SSO device code authentication event was detected, which could indicate a phishing attempt. "
+        "Attackers may be attempting to bypass security controls like MFA by exploiting the device code feature."
+    )
 
 def severity(event):
     return "high"
