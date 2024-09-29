@@ -2,35 +2,37 @@
 # Detection Name: AWS SSO Device Code Phishing
 
 description: |
-  The threat described in the summarized intelligence is a phishing attack that targets AWS SSO (Single Sign-On) users by exploiting the device code authentication feature. Attackers can leverage this vulnerability to steal AWS credentials, even when multi-factor authentication (MFA) and IP allow-listing are enabled at the identity provider (IdP) level.
+  The threat described in the summarized intelligence is a phishing attack that targets AWS SSO (Single Sign-On) users by exploiting the device code authentication feature. This feature, which is part of the OpenID Connect protocol, allows users to authenticate by entering a code displayed on their device. The attack works by tricking the user into entering their credentials on a malicious website that mimics the legitimate AWS SSO login page, effectively stealing the user's credentials.
 
-The device code authentication flow in AWS SSO is vulnerable to phishing, as it requires the user to enter a code displayed on the screen into the attacker's phishing site. This allows the attacker to obtain the user's credentials and gain unauthorized access to the victim's AWS accounts.
+This attack is particularly dangerous because it can bypass security controls like multi-factor authentication (MFA) and IP allowlisting at the identity provider (IdP) level. By stealing the user's credentials, the attacker can gain access to the user's AWS accounts and perform malicious activities.
 
 detection_rule: |
-  (in Panther (Python)):
+  (in Panther):
 
 ```python
+import re
+
 def rule(event):
     # Check if the event is an AWS CloudTrail event
     if event.get("eventSource") != "signin.amazonaws.com":
         return False
 
-    # Check if the event is a device code authentication event
-    if event.get("eventName") != "AssumeRoleWithWebIdentity":
+    # Check if the event is related to the AWS SSO device code authentication flow
+    if "deviceCode" not in event.get("eventName", ""):
         return False
 
-    # Check if the event was successful
+    # Check if the event indicates a failed login attempt
     if event.get("errorCode") is not None:
-        return False
-
-    # Check if the event was initiated from a suspicious IP address
-    if event.get("sourceIPAddress") in suspicious_ip_addresses:
         return True
 
     return False
 
-log_types = ["aws.cloudtrail"]
-description = "Detect AWS SSO device code phishing attempts"
-reference = "https://blog.christophetd.fr/phishing-for-aws-credentials-via-aws-sso-device-code-authentication/"
-tags = ["AWS", "Phishing", "Credentials"]
+def title(event):
+    return "Potential AWS SSO Device Code Phishing Attempt"
+
+def description(event):
+    return "An AWS CloudTrail event was detected that indicates a potential AWS SSO device code phishing attempt. The event shows a failed login attempt, which could be an indication of an attacker trying to steal user credentials."
+
+def severity(event):
+    return "high"
 ```
